@@ -3,19 +3,38 @@ local Downloads = {}
 
 -- Configuration for GitHub repository
 local Config = {
-    BaseURL = "https://raw.githubusercontent.com/JAKEee3e/anti/main/", -- Updated base URL
+    BaseURL = "https://raw.githubusercontent.com/JAKEee3e/anti/main/",
     Files = {
-        {name = "gui", path = "gui.lua"},
-        {name = "Aimbot", path = "Aimbot.lua"},
-        {name = "esP", path = "ESP.lua"},
-        {name = "anti-flash", path = "Anti-flash.lua"},
-        {name = "radar", path = "Radar.lua"},
-        {name = "skeleton-esp", path = "Skeleton-ESP.lua"}
+        {name = "gui", path = "gui.lua", version = "1.0.0"},
+        {name = "Aimbot", path = "Aimbot.lua", version = "1.0.0"},
+        {name = "esP", path = "ESP.lua", version = "1.0.0"},
+        {name = "anti-flash", path = "Anti-flash.lua", version = "1.0.0"},
+        {name = "radar", path = "Radar.lua", version = "1.0.0"},
+        {name = "skeleton-esp", path = "Skeleton-ESP.lua", version = "1.0.0"}
     },
     RetryAttempts = 3,
     RetryDelay = 2,
-    Debug = true -- Enable debug prints
+    Debug = true,
+    UseCache = false,
+    Version = "1.0.0"
 }
+
+-- Cache storage
+local ScriptCache = {}
+
+-- Version management
+function Downloads:SetVersion(version)
+    Config.Version = version
+end
+
+-- Cache management
+function Downloads:EnableCaching(enabled)
+    Config.UseCache = enabled
+end
+
+function Downloads:ClearCache()
+    ScriptCache = {}
+end
 
 -- Utility functions
 local function debugPrint(...)
@@ -24,36 +43,58 @@ local function debugPrint(...)
     end
 end
 
--- Download function with retry logic
-function Downloads:DownloadFile(fileInfo)
-    local attempts = 0
+-- Safe HTTP request with retry
+local function safeHttpGet(url, retries)
+    retries = retries or Config.RetryAttempts
+    local attempt = 0
+    local success, result
     
     repeat
-        attempts = attempts + 1
-        local success, result = pcall(function()
-            local url = Config.BaseURL .. fileInfo.path
-            debugPrint("Downloading:", url)
-            return HttpService:GetAsync(url)
+        attempt = attempt + 1
+        success, result = pcall(function()
+            return HttpService:GetAsync(url, Config.UseCache)
         end)
-        
-        if success then
-            debugPrint("Successfully downloaded:", fileInfo.name)
-            return result
-        end
-        
-        debugPrint("Download attempt", attempts, "failed for", fileInfo.name)
-        if attempts < Config.RetryAttempts then
+        if not success and attempt < retries then
             wait(Config.RetryDelay)
         end
-    until attempts >= Config.RetryAttempts
+    until success or attempt >= retries
     
-    warn("Failed to download after", Config.RetryAttempts, "attempts:", fileInfo.name)
+    return success, result
+end
+
+-- Download function with caching
+function Downloads:DownloadFile(fileInfo)
+    -- Check cache first
+    if Config.UseCache and ScriptCache[fileInfo.name] then
+        debugPrint("Using cached version of", fileInfo.name)
+        return ScriptCache[fileInfo.name]
+    end
+    
+    local success, content = safeHttpGet(Config.BaseURL .. fileInfo.path)
+    
+    if success then
+        debugPrint("Successfully downloaded:", fileInfo.name)
+        -- Cache the content
+        if Config.UseCache then
+            ScriptCache[fileInfo.name] = content
+        end
+        return content
+    end
+    
+    warn("Failed to download:", fileInfo.name)
     return nil
 end
 
--- Script loading function
+-- Script loading function with security checks
 function Downloads:LoadScript(source, name)
     debugPrint("Loading script:", name)
+    
+    -- Basic security check
+    if type(source) ~= "string" or source:len() < 10 then
+        warn("Invalid script content for:", name)
+        return nil
+    end
+    
     local success, result = pcall(function()
         local fn = loadstring(source)
         if type(fn) == "function" then
@@ -71,9 +112,6 @@ function Downloads:LoadScript(source, name)
     end
 end
 
--- Script storage
-local loadedScripts = {}
-
 -- Initialize and run everything
 function Downloads:Initialize()
     debugPrint("Starting initialization")
@@ -85,49 +123,27 @@ function Downloads:Initialize()
         return false
     end
     
-    -- Download all files first
-    local downloadedFiles = {}
+    -- Download and load all files
+    local loadedFiles = {}
     for _, fileInfo in ipairs(Config.Files) do
         local content = self:DownloadFile(fileInfo)
         if content then
-            -- Create ModuleScript for each downloaded file
-            local module = Instance.new("ModuleScript")
-            module.Name = fileInfo.name
-            module.Source = content
-            module.Parent = downloadedScripts
-            downloadedFiles[fileInfo.name] = content
+            local result = self:LoadScript(content, fileInfo.name)
+            if result then
+                loadedFiles[fileInfo.name] = result
+            else
+                warn("Failed to load:", fileInfo.name)
+                return false
+            end
         else
-            warn("Critical download failure for:", fileInfo.name)
+            warn("Failed to download:", fileInfo.name)
             return false
         end
         wait(0.1) -- Prevent throttling
     end
     
-    -- Load GUI first (must be loaded before other scripts)
-    if downloadedFiles["gui.lua"] then
-        loadedScripts.gui = self:LoadScript(downloadedFiles["gui.lua"], "gui.lua")
-        if not loadedScripts.gui then
-            warn("Failed to load GUI - aborting initialization")
-            return false
-        end
-        wait(0.5) -- Give GUI time to initialize
-    end
-    
-    -- Load remaining scripts in order
-    local loadOrder = {
-        "Aimbot",
-        "esP",
-        "anti-flash",
-        "radar",
-        "skeleton-esp"
-    }
-    
-    for _, name in ipairs(loadOrder) do
-        if downloadedFiles[name] then
-            loadedScripts[name] = self:LoadScript(downloadedFiles[name], name)
-            wait(0.1)
-        end
-    end
+    -- Store loaded scripts
+    ScriptCache = loadedFiles
     
     debugPrint("Initialization complete!")
     return true
@@ -135,7 +151,7 @@ end
 
 -- Function to get loaded scripts
 function Downloads:GetLoadedScripts()
-    return loadedScripts
+    return ScriptCache
 end
 
 return Downloads
