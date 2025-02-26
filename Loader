@@ -3,14 +3,14 @@ local Downloads = {}
 
 -- Configuration for GitHub repository
 local Config = {
-    BaseURL = "https://raw.github.com/JAKEee3e/anti/main/Main", -- Replace with your repository
+    BaseURL = "https://raw.githubusercontent.com/JAKEee3e/anti/main/", -- Updated base URL
     Files = {
-        {name = "gui", path = "gui"},
-        {name = "Aimbot", path = "Aimbot"},
-        {name = "esP", path = "ESP"},
-        {name = "anti-flash", path = "Anti-flash"},
-        {name = "radar", path = "Radarr"},
-        {name = "skeleton-esp", path = "Skeleton-ESP"}
+        {name = "gui", path = "gui.lua"},
+        {name = "Aimbot", path = "Aimbot.lua"},
+        {name = "esP", path = "ESP.lua"},
+        {name = "anti-flash", path = "Anti-flash.lua"},
+        {name = "radar", path = "Radar.lua"},
+        {name = "skeleton-esp", path = "Skeleton-ESP.lua"}
     },
     RetryAttempts = 3,
     RetryDelay = 2,
@@ -78,16 +78,23 @@ local loadedScripts = {}
 function Downloads:Initialize()
     debugPrint("Starting initialization")
     
-    -- Create container folder
-    local Container = Instance.new("Folder")
-    Container.Name = "DownloadedScripts"
-    Container.Parent = game:GetService("ReplicatedStorage")
+    -- Verify DownloadedScripts folder exists
+    local downloadedScripts = game:GetService("ReplicatedStorage"):FindFirstChild("DownloadedScripts")
+    if not downloadedScripts then
+        warn("DownloadedScripts folder not found")
+        return false
+    end
     
     -- Download all files first
     local downloadedFiles = {}
     for _, fileInfo in ipairs(Config.Files) do
         local content = self:DownloadFile(fileInfo)
         if content then
+            -- Create ModuleScript for each downloaded file
+            local module = Instance.new("ModuleScript")
+            module.Name = fileInfo.name
+            module.Source = content
+            module.Parent = downloadedScripts
             downloadedFiles[fileInfo.name] = content
         else
             warn("Critical download failure for:", fileInfo.name)
@@ -132,5 +139,6 @@ function Downloads:GetLoadedScripts()
 end
 
 return Downloads
+
 
 
