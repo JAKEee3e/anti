@@ -1,4 +1,6 @@
 local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local Downloads = {}
 
 -- Configuration for GitHub repository
@@ -64,7 +66,6 @@ end
 
 -- Download function with caching
 function Downloads:DownloadFile(fileInfo)
-    -- Check cache first
     if Config.UseCache and ScriptCache[fileInfo.name] then
         debugPrint("Using cached version of", fileInfo.name)
         return ScriptCache[fileInfo.name]
@@ -74,7 +75,6 @@ function Downloads:DownloadFile(fileInfo)
     
     if success then
         debugPrint("Successfully downloaded:", fileInfo.name)
-        -- Cache the content
         if Config.UseCache then
             ScriptCache[fileInfo.name] = content
         end
@@ -89,7 +89,6 @@ end
 function Downloads:LoadScript(source, name)
     debugPrint("Loading script:", name)
     
-    -- Basic security check
     if type(source) ~= "string" or source:len() < 10 then
         warn("Invalid script content for:", name)
         return nil
@@ -116,11 +115,19 @@ end
 function Downloads:Initialize()
     debugPrint("Starting initialization")
     
-    -- Verify DownloadedScripts folder exists
-    local downloadedScripts = game:GetService("ReplicatedStorage"):FindFirstChild("DownloadedScripts")
-    if not downloadedScripts then
-        warn("DownloadedScripts folder not found")
+    -- Verify PlayerGui exists
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then
+        warn("PlayerGui not found")
         return false
+    end
+    
+    -- Create or get scripts folder
+    local scriptsFolder = playerGui:FindFirstChild("LoadedScripts")
+    if not scriptsFolder then
+        scriptsFolder = Instance.new("Folder")
+        scriptsFolder.Name = "LoadedScripts"
+        scriptsFolder.Parent = playerGui
     end
     
     -- Download and load all files
