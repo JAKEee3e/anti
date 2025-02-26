@@ -1,0 +1,134 @@
+local HttpService = game:GetService("HttpService")
+local Downloads = {}
+
+-- Configuration for GitHub repository
+local Config = {
+    BaseURL = "https://raw.github.com/JAKEee3e/anti/main/Main", -- Replace with your repository
+    Files = {
+        {name = "gui.lua", path = "/gui.lua"},
+        {name = "Aimbot", path = "/Aimbot"},
+        {name = "esP", path = "/esP"},
+        {name = "anti-flash", path = "/anti-flash"},
+        {name = "radar", path = "/radar"},
+        {name = "skeleton-esp", path = "/skeleton-esp"}
+    },
+    RetryAttempts = 3,
+    RetryDelay = 2,
+    Debug = true -- Enable debug prints
+}
+
+-- Utility functions
+local function debugPrint(...)
+    if Config.Debug then
+        print("[Loader]", ...)
+    end
+end
+
+-- Download function with retry logic
+function Downloads:DownloadFile(fileInfo)
+    local attempts = 0
+    
+    repeat
+        attempts = attempts + 1
+        local success, result = pcall(function()
+            local url = Config.BaseURL .. fileInfo.path
+            debugPrint("Downloading:", url)
+            return HttpService:GetAsync(url)
+        end)
+        
+        if success then
+            debugPrint("Successfully downloaded:", fileInfo.name)
+            return result
+        end
+        
+        debugPrint("Download attempt", attempts, "failed for", fileInfo.name)
+        if attempts < Config.RetryAttempts then
+            wait(Config.RetryDelay)
+        end
+    until attempts >= Config.RetryAttempts
+    
+    warn("Failed to download after", Config.RetryAttempts, "attempts:", fileInfo.name)
+    return nil
+end
+
+-- Script loading function
+function Downloads:LoadScript(source, name)
+    debugPrint("Loading script:", name)
+    local success, result = pcall(function()
+        local fn = loadstring(source)
+        if type(fn) == "function" then
+            return fn()
+        end
+        return nil
+    end)
+    
+    if success then
+        debugPrint("Successfully loaded:", name)
+        return result
+    else
+        warn("Failed to load script:", name, "Error:", result)
+        return nil
+    end
+end
+
+-- Script storage
+local loadedScripts = {}
+
+-- Initialize and run everything
+function Downloads:Initialize()
+    debugPrint("Starting initialization")
+    
+    -- Create container folder
+    local Container = Instance.new("Folder")
+    Container.Name = "DownloadedScripts"
+    Container.Parent = game:GetService("ReplicatedStorage")
+    
+    -- Download all files first
+    local downloadedFiles = {}
+    for _, fileInfo in ipairs(Config.Files) do
+        local content = self:DownloadFile(fileInfo)
+        if content then
+            downloadedFiles[fileInfo.name] = content
+        else
+            warn("Critical download failure for:", fileInfo.name)
+            return false
+        end
+        wait(0.1) -- Prevent throttling
+    end
+    
+    -- Load GUI first (must be loaded before other scripts)
+    if downloadedFiles["gui.lua"] then
+        loadedScripts.gui = self:LoadScript(downloadedFiles["gui.lua"], "gui.lua")
+        if not loadedScripts.gui then
+            warn("Failed to load GUI - aborting initialization")
+            return false
+        end
+        wait(0.5) -- Give GUI time to initialize
+    end
+    
+    -- Load remaining scripts in order
+    local loadOrder = {
+        "Aimbot",
+        "esP",
+        "anti-flash",
+        "radar",
+        "skeleton-esp"
+    }
+    
+    for _, name in ipairs(loadOrder) do
+        if downloadedFiles[name] then
+            loadedScripts[name] = self:LoadScript(downloadedFiles[name], name)
+            wait(0.1)
+        end
+    end
+    
+    debugPrint("Initialization complete!")
+    return true
+end
+
+-- Function to get loaded scripts
+function Downloads:GetLoadedScripts()
+    return loadedScripts
+end
+
+return Downloads
