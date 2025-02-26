@@ -9,7 +9,7 @@ local Config = {
         {name = "Aimbot", path = "Aimbot"},
         {name = "esP", path = "esP"},
         {name = "anti-flash", path = "anti-flash"},
-        {name = "radar", path = "radar"},
+        {name = "radar", path = "Radarr"},
         {name = "skeleton-esp", path = "Skeleton-ESP"}
     },
     RetryAttempts = 3,
