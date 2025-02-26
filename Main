@@ -100,4 +100,4 @@ toggles.Changed:Connect(function()
     initializeAll()
 end)
 
-BaseURL = "https://raw.github.com/JAKEee3e/anti/main/Main"
+BaseURL = "https://raw.githubusercontent.com/JAKEee3e/anti/main/Loader"
