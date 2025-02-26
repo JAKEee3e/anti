@@ -6,11 +6,11 @@ local Config = {
     BaseURL = "https://github.com/JAKEee3e/anti/tree/main", -- Replace with your repository
     Files = {
         {name = "gui.lua", path = "gui"},
-        {name = "Aimbot", path = "/Aimbot"},
-        {name = "esP", path = "/esP"},
-        {name = "anti-flash", path = "/anti-flash"},
-        {name = "radar", path = "/radar"},
-        {name = "skeleton-esp", path = "/skeleton-esp"}
+        {name = "Aimbot", path = "Aimbot"},
+        {name = "esP", path = "esP"},
+        {name = "anti-flash", path = "anti-flash"},
+        {name = "radar", path = "radar"},
+        {name = "skeleton-esp", path = "skeleton-esp"}
     },
     RetryAttempts = 3,
     RetryDelay = 2,
