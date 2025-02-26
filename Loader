@@ -5,7 +5,7 @@ local Downloads = {}
 local Config = {
     BaseURL = "https://raw.github.com/JAKEee3e/anti/main/Main", -- Replace with your repository
     Files = {
-        {name = "gui.lua", path = "/gui.lua"},
+        {name = "gui.lua", path = "gui"},
         {name = "Aimbot", path = "/Aimbot"},
         {name = "esP", path = "/esP"},
         {name = "anti-flash", path = "/anti-flash"},
