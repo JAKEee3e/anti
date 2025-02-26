@@ -83,24 +83,28 @@ local function GetClosestPlayer()
     return closest
 end
 
+local toggles = require(game:GetService("CoreGui"):WaitForChild("ToggleGUI"))
+
 -- Main loop
 RunService.Heartbeat:Connect(function()
-    if _G.AimbotEnabled then
-        -- Update right-click state
-        AimbotSettings.Enabled = IsMouseButtonPressed(UserInputService, MouseButton2)
-        
-        if AimbotSettings.Enabled then
-            local target = GetClosestPlayer()
-            if target then
-                -- Instant snap aiming
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
-            end
-        end
-        
-        -- Update FOV circle
-        CircleDrawing.Position = GetMouseLocation(UserInputService)
-        CircleDrawing.Radius = AimbotSettings.FOV
+    if not toggles.aimbot then
+        CircleDrawing.Visible = false
+        return
     end
+    -- Update right-click state
+    AimbotSettings.Enabled = IsMouseButtonPressed(UserInputService, MouseButton2)
+    
+    if AimbotSettings.Enabled then
+        local target = GetClosestPlayer()
+        if target then
+            -- Instant snap aiming
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+        end
+    end
+    
+    -- Update FOV circle
+    CircleDrawing.Position = GetMouseLocation(UserInputService)
+    CircleDrawing.Radius = AimbotSettings.FOV
 end)
 
 -- Toggle team check with P key
@@ -121,3 +125,4 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
     Text = "Hold RIGHT CLICK to aim\nP - Toggle Team Check",
     Duration = 5
 })
+
