@@ -3,7 +3,7 @@ local Downloads = {}
 
 -- Configuration for GitHub repository
 local Config = {
-    BaseURL = "https://github.com/JAKEee3e/anti/tree/main", -- Replace with your repository
+    BaseURL = "https://raw.github.com/JAKEee3e/anti/main/Main", -- Replace with your repository
     Files = {
         {name = "gui", path = "gui"},
         {name = "Aimbot", path = "Aimbot"},
