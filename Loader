@@ -10,7 +10,7 @@ local Config = {
         {name = "esP", path = "esP"},
         {name = "anti-flash", path = "anti-flash"},
         {name = "radar", path = "radar"},
-        {name = "skeleton-esp", path = "skeleton-esp"}
+        {name = "skeleton-esp", path = "Skeleton-ESP"}
     },
     RetryAttempts = 3,
     RetryDelay = 2,
