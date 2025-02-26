@@ -1,7 +1,10 @@
 -- Main script to initialize and run all functionalities
+local BaseURL = "https://raw.githubusercontent.com/JAKEee3e/anti/main/"
+local SCRIPT_VERSION = "1.0.0" -- Add version tracking
 
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 
 -- Anti exploitation check
 if not game:IsLoaded() then 
@@ -18,44 +21,123 @@ local function notify(text, duration)
     })
 end
 
+-- Function to safely make HTTP requests with retry logic
+local function safeHttpGet(url, retries)
+    retries = retries or 3
+    local attempt = 0
+    local success, result
+    
+    repeat
+        attempt = attempt + 1
+        success, result = pcall(function()
+            return HttpService:GetAsync(url, true) -- true enables caching
+        end)
+        if not success and attempt < retries then
+            wait(1) -- Wait before retry
+        end
+    until success or attempt >= retries
+    
+    return success, result
+end
+
+-- Function to create initial folder structure and loader module
+local function createLoaderStructure()
+    -- Create or get DownloadedScripts folder
+    local downloadedScripts = ReplicatedStorage:FindFirstChild("DownloadedScripts")
+    if not downloadedScripts then
+        downloadedScripts = Instance.new("Folder")
+        downloadedScripts.Name = "DownloadedScripts"
+        downloadedScripts.Parent = ReplicatedStorage
+    end
+    
+    -- Create or get loader module
+    local loaderModule = downloadedScripts:FindFirstChild("loader")
+    if not loaderModule then
+        -- Download loader script from GitHub
+        local success, content = safeHttpGet(BaseURL .. "Loader")
+        
+        if success and content then
+            -- Verify script content (basic check)
+            if not content:match("^%s*local%s+HttpService") then
+                warn("Invalid loader script content")
+                return false
+            end
+            
+            local module = Instance.new("ModuleScript")
+            module.Name = "loader"
+            module.Source = content
+            module.Parent = downloadedScripts
+            return true
+        else
+            warn("Failed to download loader script:", content)
+            return false
+        end
+    end
+    return true
+end
+
+-- Cache for downloaded scripts
+local scriptCache = {}
+
 -- Main loading function
 local function loadScripts()
     notify("Starting script initialization...")
-    print("Starting script initialization...") -- Debug print
+    print("Starting script initialization...")
+    
+    -- Check if scripts are already cached
+    if next(scriptCache) then
+        print("Using cached scripts")
+        return true
+    end
+    
+    -- Create loader structure first
+    if not createLoaderStructure() then
+        notify("Failed to create loader structure", 10)
+        return false
+    end
     
     -- Load the loader script
     local success, Loader = pcall(function()
-        -- Try to require loader from ReplicatedStorage first
-        local loaderModule = ReplicatedStorage:WaitForChild("DownloadedScripts"):WaitForChild("loader")
+        local loaderModule = ReplicatedStorage:FindFirstChild("DownloadedScripts"):FindFirstChild("loader")
+        if not loaderModule then
+            error("Loader module not found")
+        end
         return require(loaderModule)
     end)
     
     if not success then
         warn("Failed to load loader script:", Loader)
         notify("Failed to initialize loader", 10)
-        return
+        return false
     end
+    
+    -- Set version and cache in loader
+    Loader:SetVersion(SCRIPT_VERSION)
+    Loader:EnableCaching(true)
     
     -- Initialize the loader
     success = Loader:Initialize()
     
     if success then
         notify("Successfully loaded all scripts!", 5)
-        print("Successfully loaded all scripts!") -- Debug print
+        print("Successfully loaded all scripts!")
         
-        -- Access loaded scripts if needed
-        local loadedScripts = Loader:GetLoadedScripts()
-        if loadedScripts.gui then
-            print("GUI module loaded successfully")
-        end
+        -- Cache the loaded scripts
+        scriptCache = Loader:GetLoadedScripts()
+        return true
     else
         notify("Failed to load some scripts. Check console for details.", 10)
-        print("Failed to load some scripts. Check console for details.") -- Debug print
+        print("Failed to load some scripts. Check console for details.")
+        return false
     end
 end
 
--- Run the loader
-loadScripts()
+-- Run the loader with error handling
+local success = loadScripts()
+if not success then
+    warn("Failed to load scripts - please check your internet connection")
+    return
+end
 
 -- Require the GUI to access toggle states
 local toggles = require(game:GetService("CoreGui"):WaitForChild("ToggleGUI"))
@@ -103,4 +185,3 @@ toggles.Changed:Connect(function()
     initializeAll()
 end)
 
-BaseURL = "https://raw.githubusercontent.com/JAKEee3e/anti/main/Loader"
