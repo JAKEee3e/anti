@@ -7,8 +7,8 @@ local Config = {
     Files = {
         {name = "gui", path = "gui"},
         {name = "Aimbot", path = "Aimbot"},
-        {name = "esP", path = "esP"},
-        {name = "anti-flash", path = "anti-flash"},
+        {name = "esP", path = "ESP"},
+        {name = "anti-flash", path = "Anti-flash"},
         {name = "radar", path = "Radarr"},
         {name = "skeleton-esp", path = "Skeleton-ESP"}
     },
