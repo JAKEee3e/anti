@@ -21,6 +21,7 @@ end
 -- Main loading function
 local function loadScripts()
     notify("Starting script initialization...")
+    print("Starting script initialization...") -- Debug print
     
     -- Load the loader script
     local success, Loader = pcall(function()
@@ -40,6 +41,7 @@ local function loadScripts()
     
     if success then
         notify("Successfully loaded all scripts!", 5)
+        print("Successfully loaded all scripts!") -- Debug print
         
         -- Access loaded scripts if needed
         local loadedScripts = Loader:GetLoadedScripts()
@@ -48,6 +50,7 @@ local function loadScripts()
         end
     else
         notify("Failed to load some scripts. Check console for details.", 10)
+        print("Failed to load some scripts. Check console for details.") -- Debug print
     end
 end
 
