@@ -1,0 +1,56 @@
+-- Keep original code unchanged
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+local GUI = Instance.new("ScreenGui")
+GUI.Name = "ToggleGUI"
+GUI.Parent = CoreGui
+
+local function createButton(name, position, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 200, 0, 50)
+    button.Position = position
+    button.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Text = name
+    button.Parent = GUI
+    button.MouseButton1Click:Connect(callback)
+    return button
+end
+
+local toggles = {
+    skeletonESP = false,
+    esp = false,
+    aimbot = false,
+    radar = false,
+    antiFlash = false
+}
+
+createButton("Toggle Skeleton ESP", UDim2.new(0, 10, 0, 10), function()
+    toggles.skeletonESP = not toggles.skeletonESP
+    print("Skeleton ESP: " .. (toggles.skeletonESP and "ON" or "OFF"))
+end)
+
+createButton("Toggle ESP", UDim2.new(0, 10, 0, 70), function()
+    toggles.esp = not toggles.esp
+    print("ESP: " .. (toggles.esp and "ON" or "OFF"))
+end)
+
+createButton("Toggle Aimbot", UDim2.new(0, 10, 0, 130), function()
+    toggles.aimbot = not toggles.aimbot
+    print("Aimbot: " .. (toggles.aimbot and "ON" or "OFF"))
+end)
+
+createButton("Toggle Radar", UDim2.new(0, 10, 0, 190), function()
+    toggles.radar = not toggles.radar
+    print("Radar: " .. (toggles.radar and "ON" or "OFF"))
+end)
+
+createButton("Toggle Anti-Flash", UDim2.new(0, 10, 0, 250), function()
+    toggles.antiFlash = not toggles.antiFlash
+    print("Anti-Flash: " .. (toggles.antiFlash and "ON" or "OFF"))
+end)
+
+return toggles
